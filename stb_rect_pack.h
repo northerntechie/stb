@@ -74,6 +74,8 @@
 #define STBRP_DEF extern
 #endif
 
+#include <stdint.h> // nt/integration
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -115,7 +117,7 @@ STBRP_DEF int stbrp_pack_rects (stbrp_context *context, stbrp_rect *rects, int n
 struct stbrp_rect
 {
    // reserved for your use:
-   int            id;
+   uint64_t id; // nt/integration
 
    // input:
    stbrp_coord    w, h;
@@ -174,8 +176,9 @@ enum
 
 struct stbrp_node
 {
-   stbrp_coord  x,y;
-   stbrp_node  *next;
+	uint64_t id; // nt/integration
+	stbrp_coord  x,y;
+	stbrp_node  *next;
 };
 
 struct stbrp_context
@@ -442,7 +445,7 @@ static stbrp__findresult stbrp__skyline_find_best_pos(stbrp_context *c, int widt
    return fr;
 }
 
-static stbrp__findresult stbrp__skyline_pack_rectangle(stbrp_context *context, int width, int height)
+static stbrp__findresult stbrp__skyline_pack_rectangle(stbrp_context *context, int width, int height, uint64_t id)
 {
    // find best position according to heuristic
    stbrp__findresult res = stbrp__skyline_find_best_pos(context, width, height);
@@ -459,6 +462,7 @@ static stbrp__findresult stbrp__skyline_pack_rectangle(stbrp_context *context, i
 
    // on success, create new node
    node = context->free_head;
+   node->id = id;
    node->x = (stbrp_coord) res.x;
    node->y = (stbrp_coord) (res.y + height);
 
@@ -555,7 +559,7 @@ STBRP_DEF int stbrp_pack_rects(stbrp_context *context, stbrp_rect *rects, int nu
       if (rects[i].w == 0 || rects[i].h == 0) {
          rects[i].x = rects[i].y = 0;  // empty rect needs no space
       } else {
-         stbrp__findresult fr = stbrp__skyline_pack_rectangle(context, rects[i].w, rects[i].h);
+         stbrp__findresult fr = stbrp__skyline_pack_rectangle(context, rects[i].w, rects[i].h, rects[i].id);
          if (fr.prev_link) {
             rects[i].x = (stbrp_coord) fr.x;
             rects[i].y = (stbrp_coord) fr.y;
